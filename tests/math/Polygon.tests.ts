@@ -152,4 +152,70 @@ describe('Polygon', () =>
 
         // Add additional tests as necessary
     });
+
+    describe('containsPolygon', () =>
+    {
+        // Layer 1: Bounds check
+        it('should early-out true when bounds are fully contained', () =>
+        {
+            const outer = new Polygon([
+                0, 0,
+                100, 0,
+                100, 100,
+                0, 100,
+            ]);
+
+            const inner = new Polygon([
+                25, 25,
+                75, 25,
+                75, 75,
+                25, 75,
+            ]);
+
+            // This should pass on the first bounds check
+            expect(outer.containsPolygon(inner)).toBe(true);
+        });
+
+        // Layer 2: Points-in-bounds check
+        it('should fail fast when points are outside bounds', () =>
+        {
+            const polygon1 = new Polygon([
+                50, 50,
+                100, 50,
+                100, 100,
+                50, 100,
+            ]);
+
+            const polygon2 = new Polygon([
+                25, 75, // This point is outside polygon1's bounds
+                75, 75,
+                75, 125,
+                25, 125,
+            ]);
+
+            // This should fail at the points-in-bounds check
+            expect(polygon1.containsPolygon(polygon2)).toBe(false);
+        });
+
+        // Test all three layers with a failing case
+        it('should handle complex non-containment case', () =>
+        {
+            const polygon1 = new Polygon([
+                0, 0,
+                100, 0,
+                100, 100,
+                50, 50, // concave point
+                0, 100,
+            ]);
+
+            const polygon2 = new Polygon([
+                60, 60,
+                90, 60,
+                75, 80,
+            ]);
+
+            // Points are within bounds but not within polygon
+            expect(polygon1.containsPolygon(polygon2)).toBe(false);
+        });
+    });
 });

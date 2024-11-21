@@ -21,6 +21,12 @@ import type { RoundedPoint } from './roundShape';
 
 const tempRectangle = new Rectangle();
 
+export type ShapePrimitiveWithHoles = {
+    shape: ShapePrimitive,
+    transform?: Matrix,
+    holes?: ShapePrimitiveWithHoles[]
+};
+
 /**
  * The `ShapePath` class acts as a bridge between high-level drawing commands
  * and the lower-level `GraphicsContext` rendering engine.
@@ -34,14 +40,16 @@ const tempRectangle = new Rectangle();
 export class ShapePath
 {
     /** The list of shape primitives that make up the path. */
-    public shapePrimitives: { shape: ShapePrimitive, transform?: Matrix }[] = [];
+    public shapePrimitives: ShapePrimitiveWithHoles[] = [];
     private _currentPoly: Polygon | null = null;
     private readonly _graphicsPath2D: GraphicsPath;
     private readonly _bounds = new Bounds();
+    public readonly signed: boolean;
 
     constructor(graphicsPath2D: GraphicsPath)
     {
         this._graphicsPath2D = graphicsPath2D;
+        this.signed = graphicsPath2D.checkForHoles;
     }
 
     /**
@@ -249,19 +257,58 @@ export class ShapePath
     {
         this.endPoly();
 
+        // Only clone if we need to transform
         if (transform && !transform.isIdentity())
         {
             path = path.clone(true);
             path.transform(transform);
         }
 
+        const shapePrimitives = this.shapePrimitives;
+        const start = shapePrimitives.length;
+
         for (let i = 0; i < path.instructions.length; i++)
         {
             const instruction = path.instructions[i];
 
-            // Sorry TS! this is the best we could do...
             this[instruction.action](...(instruction.data as [never, never, never, never, never, never, never]));
-            // build out the path points
+        }
+
+        // This section processes holes in polygons by checking if any polygon is contained within another.
+        // If a polygon is found to be inside another polygon (mainShape), it's treated as a hole.
+        // The hole polygon is removed from the main shapePrimitives array and added to the holes array
+        // of the containing polygon. This allows for proper rendering of shapes with holes.
+        if (path.checkForHoles && shapePrimitives.length - start > 1)
+        {
+            let mainShape = null;
+
+            // Process in place instead of creating a removal array
+            for (let i = start; i < shapePrimitives.length; i++)
+            {
+                const shapePrimitive = shapePrimitives[i];
+
+                if (shapePrimitive.shape.type === 'polygon')
+                {
+                    const polygon = shapePrimitive.shape as Polygon;
+                    const mainPolygon = mainShape?.shape as Polygon;
+
+                    if (mainPolygon && mainPolygon.containsPolygon(polygon))
+                    {
+                        // Initialize holes array only when needed
+                        mainShape.holes ||= [];
+                        mainShape.holes.push(shapePrimitive);
+
+                        // Remove the hole by moving elements left
+                        shapePrimitives.copyWithin(i, i + 1);
+                        shapePrimitives.length--;
+                        i--;
+                    }
+                    else
+                    {
+                        mainShape = shapePrimitive;
+                    }
+                }
+            }
         }
 
         return this;

@@ -21,8 +21,7 @@ import type { ShapeBuildCommand } from '../buildCommands/ShapeBuildCommand';
 import type { ConvertedFillStyle, ConvertedStrokeStyle } from '../FillTypes';
 import type { GraphicsContext, TextureInstruction } from '../GraphicsContext';
 import type { GpuGraphicsContext } from '../GraphicsContextSystem';
-import type { GraphicsPath } from '../path/GraphicsPath';
-import type { ShapePath } from '../path/ShapePath';
+import type { ShapePath, ShapePrimitiveWithHoles } from '../path/ShapePath';
 
 export const shapeBuilders: Record<string, ShapeBuildCommand> = {};
 
@@ -64,11 +63,17 @@ export function buildContextBatches(context: GraphicsContext, gpuContext: GpuGra
 
             if (isStroke && hole)
             {
-                addShapePathToGeometryData(hole.shapePath, style, null, true, batches, geometryData);
+                addShapePathToGeometryData(hole.shapePath, style, true, batches, geometryData);
             }
 
-            addShapePathToGeometryData(shapePath, style, hole, isStroke, batches, geometryData);
-        }
+            if (hole)
+            {
+                // add the holes to the last shape primitive
+                shapePath.shapePrimitives[shapePath.shapePrimitives.length - 1].holes = hole.shapePath.shapePrimitives;
+            }
+
+            addShapePathToGeometryData(shapePath, style, isStroke, batches, geometryData);
+        }//
     }
 }
 
@@ -141,7 +146,6 @@ function addTextureToGeometryData(
 function addShapePathToGeometryData(
     shapePath: ShapePath,
     style: ConvertedFillStyle | ConvertedStrokeStyle,
-    hole: GraphicsPath,
     isStroke: boolean,
     batches: BatchableGraphics[],
     geometryData: {
@@ -152,9 +156,8 @@ function addShapePathToGeometryData(
 )
 {
     const { vertices, uvs, indices } = geometryData;
-    const lastIndex = shapePath.shapePrimitives.length - 1;
 
-    shapePath.shapePrimitives.forEach(({ shape, transform: matrix }, i) =>
+    shapePath.shapePrimitives.forEach(({ shape, transform: matrix, holes }) =>
     {
         const indexOffset = indices.length;
         const vertOffset = vertices.length / 2;
@@ -177,18 +180,13 @@ function addShapePathToGeometryData(
 
         if (!isStroke)
         {
-            if (hole && lastIndex === i)
+            if (holes)
             {
-                if (lastIndex !== 0)
-                {
-                    console.warn('[Pixi Graphics] only the last shape have be cut out');
-                }
-
                 const holeIndices: number[] = [];
 
                 const otherPoints = points.slice();
 
-                const holeArrays = getHoleArrays(hole.shapePath);
+                const holeArrays = getHoleArrays(holes);
 
                 holeArrays.forEach((holePoints) =>
                 {
@@ -253,12 +251,8 @@ function addShapePathToGeometryData(
     });
 }
 
-function getHoleArrays(shape: ShapePath)
+function getHoleArrays(holePrimitives: ShapePrimitiveWithHoles[])
 {
-    if (!shape) return [];
-
-    const holePrimitives = shape.shapePrimitives;
-
     const holeArrays = [];
 
     for (let k = 0; k < holePrimitives.length; k++)

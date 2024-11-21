@@ -327,4 +327,67 @@ describe('Rectangle', () =>
         expect(a.intersects(a.clone(), m.clone().scale(-1, +1).translate(135, 135))).toEqual(true);
         expect(a.intersects(a.clone(), m.clone().scale(-1, +1).translate(136, 136))).toEqual(false);
     });
+
+    describe('containsRect', () =>
+    {
+        it('should return true when rectangle is fully contained', () =>
+        {
+            const outer = new Rectangle(0, 0, 100, 100);
+            const inner = new Rectangle(25, 25, 50, 50);
+
+            expect(outer.containsRect(inner)).toBe(true);
+        });
+
+        it('should return false when rectangle is partially outside', () =>
+        {
+            const rect1 = new Rectangle(0, 0, 100, 100);
+            const rect2 = new Rectangle(50, 50, 100, 100);
+
+            expect(rect1.containsRect(rect2)).toBe(false);
+        });
+
+        it('should return false when rectangle is completely outside', () =>
+        {
+            const rect1 = new Rectangle(0, 0, 50, 50);
+            const rect2 = new Rectangle(100, 100, 50, 50);
+
+            expect(rect1.containsRect(rect2)).toBe(false);
+        });
+
+        it('should return false when width is 0', () =>
+        {
+            const rect1 = new Rectangle(0, 0, 0, 100);
+            const rect2 = new Rectangle(0, 0, 50, 50);
+
+            expect(rect1.containsRect(rect2)).toBe(false);
+        });
+
+        it('should return false when height is 0', () =>
+        {
+            const rect1 = new Rectangle(0, 0, 100, 0);
+            const rect2 = new Rectangle(0, 0, 50, 50);
+
+            expect(rect1.containsRect(rect2)).toBe(false);
+        });
+
+        it('should handle edge touching cases', () =>
+        {
+            const outer = new Rectangle(0, 0, 100, 100);
+            const edge = new Rectangle(0, 0, 50, 50); // Touches at corner
+            const edge2 = new Rectangle(0, 25, 50, 50); // Touches at left edge
+            const edge3 = new Rectangle(25, 0, 50, 50); // Touches at top edge
+
+            expect(outer.containsRect(edge)).toBe(true);
+            expect(outer.containsRect(edge2)).toBe(true);
+            expect(outer.containsRect(edge3)).toBe(true);
+        });
+
+        it('should handle identical rectangles', () =>
+        {
+            const rect1 = new Rectangle(0, 0, 100, 100);
+            const rect2 = new Rectangle(0, 0, 100, 100);
+
+            expect(rect1.containsRect(rect2)).toBe(false);
+        });
+    });
 });

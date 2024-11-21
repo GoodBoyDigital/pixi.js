@@ -5,6 +5,9 @@ import type { SHAPE_PRIMITIVE } from '../misc/const';
 import type { PointData } from '../point/PointData';
 import type { ShapePrimitive } from './ShapePrimitive';
 
+let tempRect: Rectangle;
+let tempRect2: Rectangle;
+
 /**
  * A class to define a shape via user defined coordinates.
  *
@@ -71,6 +74,79 @@ export class Polygon implements ShapePrimitive
         this.points = flat as number[];
 
         this.closePath = true;
+    }
+
+    /**
+     * Determines whether the polygon's points are arranged in a clockwise direction.
+     * This is calculated using the "shoelace formula" (also known as surveyor's formula) to find the signed area.
+     * A positive area indicates clockwise winding, while negative indicates counter-clockwise.
+     *
+     * The formula sums up the cross products of adjacent vertices:
+     * For each pair of adjacent points (x1,y1) and (x2,y2), we calculate (x1*y2 - x2*y1)
+     * The final sum divided by 2 gives the signed area - positive for clockwise.
+     * @returns `true` if the polygon's points are arranged clockwise, `false` if counter-clockwise
+     */
+    public isClockwise(): boolean
+    {
+        let area = 0;
+        const points = this.points;
+        const length = points.length;
+
+        for (let i = 0; i < length; i += 2)
+        {
+            const x1 = points[i];
+            const y1 = points[i + 1];
+            const x2 = points[(i + 2) % length];
+            const y2 = points[(i + 3) % length];
+
+            area += (x2 - x1) * (y2 + y1);
+        }
+
+        return area < 0;
+    }
+
+    /**
+     * Checks if this polygon completely contains another polygon.
+     *
+     * This is useful for detecting holes in shapes, like when parsing SVG paths.
+     * For example, if you have two polygons:
+     * ```ts
+     * const outerSquare = new Polygon([0,0, 100,0, 100,100, 0,100]); // A square
+     * const innerSquare = new Polygon([25,25, 75,25, 75,75, 25,75]); // A smaller square inside
+     *
+     * outerSquare.containsPolygon(innerSquare); // Returns true
+     * innerSquare.containsPolygon(outerSquare); // Returns false
+     * ```
+     * @param polygon - The polygon to test for containment
+     * @returns True if this polygon completely contains the other polygon
+     */
+    public containsPolygon(polygon: Polygon): boolean
+    {
+    // Quick early-out: bounds check
+        const thisBounds = this.getBounds(tempRect);
+        const otherBounds = polygon.getBounds(tempRect2);
+
+        if (!thisBounds.containsRect(otherBounds))
+        {
+            return false; // If bounds aren't contained, the polygon cannot be a hole
+        }
+
+        // Full point containment check
+        const points = polygon.points;
+
+        for (let i = 0; i < points.length; i += 2)
+        {
+            const x = points[i];
+            const y = points[i + 1];
+
+            // Combine bounds and polygon checks for efficiency
+            if (!this.contains(x, y))
+            {
+                return false;
+            }
+        }
+
+        return true; // All points are contained within bounds and polygon
     }
 
     /**
