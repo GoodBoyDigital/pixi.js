@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { groupD8 } from '../../../src';
 import { Cache } from '../../../src/assets/cache/Cache';
 import { Rectangle } from '../../../src/maths/shapes/Rectangle';
 import { Texture } from '../../../src/rendering/renderers/shared/texture/Texture';
@@ -139,6 +140,38 @@ describe('BitmapFont', () =>
 
             expect(font.chars.a.texture.frame.x).toBe(10);
             expect(font.chars.a.texture.frame.y).toBe(20);
+        });
+
+        it('should take texture rotation into account', () =>
+        {
+            const texture = new Texture({ rotate: groupD8.S });
+            const font = new BitmapFont({
+                textures: [texture],
+                data: {
+                    baseLineOffset: 0,
+                    chars: {
+                        a: {
+                            id: 65,
+                            page: 0,
+                            x: 0,
+                            y: 0,
+                            width: 10,
+                            height: 10,
+                            letter: 'a',
+                            xOffset: 0,
+                            yOffset: 0,
+                            kerning: {},
+                            xAdvance: 0,
+                        },
+                    },
+                    pages: [{ id: 0, file: '' }],
+                    lineHeight: 10,
+                    fontSize: 10,
+                    fontFamily: 'font'
+                }
+            });
+
+            expect(font.chars.a.texture.rotate).toBe(groupD8.S);
         });
     });
 });

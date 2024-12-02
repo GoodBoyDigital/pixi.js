@@ -47,6 +47,7 @@ export class BitmapFont extends AbstractBitmapFont<BitmapFont>
             const {
                 frame: textureFrame,
                 source: textureSource,
+                rotate: textureRotate
             } = textures[charData.page];
 
             const frameReal = new Rectangle(
@@ -58,7 +59,8 @@ export class BitmapFont extends AbstractBitmapFont<BitmapFont>
 
             const texture = new Texture({
                 source: textureSource,
-                frame: frameReal
+                frame: frameReal,
+                rotate: textureRotate
             });
 
             this.chars[key] = {
