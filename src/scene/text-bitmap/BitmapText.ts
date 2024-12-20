@@ -1,5 +1,5 @@
 import { warn } from '../../utils/logging/warn';
-import { AbstractText, ensureOptions } from '../text/AbstractText';
+import { AbstractText, ensureTextOptions } from '../text/AbstractText';
 import { TextStyle } from '../text/TextStyle';
 import { BitmapFontManager } from './BitmapFontManager';
 
@@ -112,7 +112,7 @@ export class BitmapText extends AbstractText<TextStyle, TextStyleOptions> implem
     constructor(text?: TextString, options?: Partial<TextStyle>);
     constructor(...args: [TextOptions?] | [TextString, Partial<TextStyle>])
     {
-        const options = ensureOptions(args, 'BitmapText');
+        const options = ensureTextOptions(args, 'BitmapText');
 
         options.style ??= options.style || {};
         options.style.fill ??= 0xffffff;

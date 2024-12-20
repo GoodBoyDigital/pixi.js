@@ -1,4 +1,4 @@
-import { AbstractText, ensureOptions } from '../text/AbstractText';
+import { AbstractText, ensureTextOptions } from '../text/AbstractText';
 import { HTMLTextStyle } from './HTMLTextStyle';
 import { measureHtmlText } from './utils/measureHtmlText';
 
@@ -65,7 +65,7 @@ export class HTMLText extends AbstractText<HTMLTextStyle, HTMLTextStyleOptions> 
     constructor(text?: TextString, options?: Partial<HTMLTextStyle>);
     constructor(...args: [HTMLTextOptions?] | [TextString, Partial<HTMLTextStyle>])
     {
-        const options = ensureOptions<HTMLTextStyle, HTMLTextStyleOptions>(args, 'HtmlText');
+        const options = ensureTextOptions<HTMLTextStyle, HTMLTextStyleOptions>(args, 'HtmlText');
 
         super(options, HTMLTextStyle);
     }

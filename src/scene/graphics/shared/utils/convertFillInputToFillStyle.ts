@@ -88,7 +88,7 @@ function handleFillGradient(
     defaultStyle: ConvertedFillStyle
 ): ConvertedFillStyle
 {
-    value.buildLinearGradient();
+    value.buildGradient();
     fill.fill = value;
     fill.color = 0xffffff;
     fill.texture = value.texture;

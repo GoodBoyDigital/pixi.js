@@ -31,7 +31,7 @@ export const scene: TestScene = {
                 },
             },
         });
-        const gradient = new FillGradient(0, 0, 67, 0)
+        const gradient = new FillGradient(0, 0, 67, 0, 'global')
             .addColorStop(0, 0xff0000)
             .addColorStop(0.5, 0x00ff00)
             .addColorStop(1, 0x0000ff);

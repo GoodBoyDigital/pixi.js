@@ -1,4 +1,4 @@
-import { AbstractText, ensureOptions } from './AbstractText';
+import { AbstractText, ensureTextOptions } from './AbstractText';
 import { CanvasTextMetrics } from './canvas/CanvasTextMetrics';
 import { TextStyle } from './TextStyle';
 
@@ -45,7 +45,7 @@ export class Text
     constructor(text?: TextString, options?: Partial<TextStyle>);
     constructor(...args: [TextOptions?] | [TextString, Partial<TextStyle>])
     {
-        const options = ensureOptions(args, 'Text');
+        const options = ensureTextOptions(args, 'Text');
 
         super(options, TextStyle);
     }

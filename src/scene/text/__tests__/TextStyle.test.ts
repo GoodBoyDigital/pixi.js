@@ -237,7 +237,7 @@ describe('TextStyle', () =>
         const textStyle = new TextStyle(style as TextStyleOptions);
 
         expect(textStyle._fill.fill).toBeInstanceOf(FillGradient);
-        expect((textStyle._fill.fill as FillGradient).gradientStops).toEqual([
+        expect((textStyle._fill.fill as FillGradient).colorStops).toEqual([
             { offset: 0, color: '#000000ff' },
             { offset: 0.5, color: '#ff0000ff' },
             { offset: 1, color: '#ffffffff' },

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import parse from 'parse-svg-path';
 import { warn } from '../../../../utils/logging/warn';
 

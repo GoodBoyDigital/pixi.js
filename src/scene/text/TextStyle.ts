@@ -392,7 +392,31 @@ export class TextStyle extends EventEmitter<{
     get wordWrapWidth(): number { return this._wordWrapWidth; }
     set wordWrapWidth(value: number) { this._wordWrapWidth = value; this.update(); }
 
-    /** A fillstyle that will be used on the text e.g., 'red', '#00FF00'. */
+    /**
+     * The fill style that will be used to color the text.
+     * This can be:
+     * - A color string like 'red', '#00FF00', or 'rgba(255,0,0,0.5)'
+     * - A hex number like 0xff0000 for red
+     * - A FillStyle object with properties like { color: 0xff0000, alpha: 0.5 }
+     * - A FillGradient for gradient fills
+     * - A FillPattern for pattern/texture fills
+     *
+     * When using a FillGradient, vertical gradients (angle of 90 degrees) are applied per line of text,
+     * while gradients at any other angle are spread across the entire text body as a whole.
+     * @example
+     * // Vertical gradient applied per line
+     * const verticalGradient = new FillGradient(0, 0, 0, 1)
+     *     .addColorStop(0, 0xff0000)
+     *     .addColorStop(1, 0x0000ff);
+     *
+     * const text = new Text({
+     *     text: 'Line 1\nLine 2',
+     *     style: { fill: verticalGradient }
+     * });
+     *
+     * To manage the gradient in a global scope, set the textureSpace property of the FillGradient to 'global'.
+     * @type {string|number|FillStyle|FillGradient|FillPattern}
+     */
     get fill(): FillInput
     {
         return this._originalFill;
