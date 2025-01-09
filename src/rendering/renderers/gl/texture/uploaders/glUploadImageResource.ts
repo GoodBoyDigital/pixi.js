@@ -69,11 +69,10 @@ export const glUploadImageResource = {
         }
         else if (glWidth === textureWidth || glHeight === textureHeight)
         {
-            gl.texSubImage2D(
-                gl.TEXTURE_2D,
+            gl.texImage2D(
+                glTexture.target,
                 0,
-                0,
-                0,
+                glTexture.internalFormat,
                 glTexture.format,
                 glTexture.type,
                 source.resource as TexImageSource
