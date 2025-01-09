@@ -6,6 +6,33 @@ import type { FillGradient } from './fill/FillGradient';
 import type { FillPattern } from './fill/FillPattern';
 
 /**
+ * Determines how texture coordinates are calculated
+ * Local Space:              Global Space:
+ * ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+ * │ A   B   │  │ A   B   │  │ A...B   │  │ ...B... │
+ * │         │  │         │  │         │  │         │
+ * │ C   D   │  │ C   D   │  │ C...D   │  │ ...D... │
+ * └─────────┘  └─────────┘  └─────────┘  └─────────┘
+ * (Each shape   (Each shape  (Texture continues across
+ * gets full     gets full    shapes as if they're
+texture)      texture)     windows to same texture)
+ */
+export type TextureSpace =
+    /**
+     * 'local' - Texture coordinates are relative to the shape's bounds.
+     * The texture will stretch/fit to each individual shape's boundaries.
+     * Think of it like the shape having its own coordinate system.
+     */
+    | 'local'
+    /**
+     * 'global' - Texture coordinates are in world space.
+     * The texture position is consistent across all shapes,
+     * as if the texture was laid down first and shapes were cut out of it.
+     * Think of it like wallpaper that shows through shaped holes.
+     */
+    | 'global';
+
+/**
  * A fill style object.
  * @memberof scene
  */
@@ -21,6 +48,8 @@ export interface FillStyle
     matrix?: Matrix | null;
     /** The fill pattern to use. */
     fill?: FillPattern | FillGradient | null;
+    /** The fill units to use. */
+    textureSpace?: TextureSpace;
 }
 
 /**

@@ -1,22 +1,39 @@
-import { Color } from '../../../../color/Color';
+import { warn } from '../../../../utils/logging/warn';
 import { GraphicsPath } from '../path/GraphicsPath';
+import { parseSVGDefinitions } from './parseSVGDefinitions';
+import { parseSVGFloatAttribute } from './parseSVGFloatAttribute';
+import { parseSVGStyle } from './parseSVGStyle';
 
-import type { ConvertedFillStyle, ConvertedStrokeStyle, FillStyle, StrokeStyle } from '../FillTypes';
+import type { FillGradient } from '../fill/FillGradient';
+import type { FillStyle, StrokeStyle } from '../FillTypes';
 import type {
     GraphicsContext,
 } from '../GraphicsContext';
 
-interface Session
+/** Represents a session for SVG parsing. Contains the current state and resources needed during parsing. */
+export interface Session
 {
+    /** The graphics context to render to */
     context: GraphicsContext;
+    /** The current path being constructed */
     path: GraphicsPath;
+    /** Map of definitions by id */
+    defs: Record<string, FillGradient>;
 }
 
+/**
+ * Parses an SVG element or string and renders it to a graphics context.
+ * Handles both SVG strings and SVG DOM elements as input.
+ * @param svg - The SVG content to parse, either as a string or element
+ * @param graphicsContext - Optional graphics context to render to
+ * @returns The graphics context with the SVG rendered into it
+ */
 export function SVGParser(
     svg: string | SVGElement | SVGSVGElement,
     graphicsContext?: GraphicsContext
 ): GraphicsContext
 {
+    // Convert string input to SVG element
     if (typeof svg === 'string')
     {
         const div = document.createElement('div');
@@ -25,21 +42,44 @@ export function SVGParser(
         svg = div.querySelector('svg') as SVGElement;
     }
 
+    // Initialize parsing session
     const session = {
         context: graphicsContext,
+        defs: {},
         path: new GraphicsPath(),
     };
 
-    renderChildren(svg, session, null, null);
+    // Parse definitions (gradients, etc) first
+    parseSVGDefinitions(svg, session);
+
+    // Process all child elements except defs
+    const children = svg.children;
+
+    for (let i = 0; i < children.length; i++)
+    {
+        const child = children[i] as SVGElement;
+
+        if (child.nodeName.toLowerCase() === 'defs') continue;
+        renderChildren(child, session, null, null);
+    }
 
     return graphicsContext;
 }
 
+/**
+ * Recursively renders SVG elements and their children.
+ * Handles styling inheritance and different SVG shape types.
+ * @param svg - The SVG element to render
+ * @param session - The current parsing session
+ * @param fillStyle - The inherited fill style
+ * @param strokeStyle - The inherited stroke style
+ */
 function renderChildren(svg: SVGElement, session: Session, fillStyle: FillStyle, strokeStyle: StrokeStyle): void
 {
     const children = svg.children;
 
-    const { fillStyle: f1, strokeStyle: s1 } = parseStyle(svg);
+    // Parse element's style and merge with inherited styles
+    const { fillStyle: f1, strokeStyle: s1 } = parseSVGStyle(svg, session);
 
     if (f1 && fillStyle)
     {
@@ -59,9 +99,13 @@ function renderChildren(svg: SVGElement, session: Session, fillStyle: FillStyle,
         strokeStyle = s1;
     }
 
-    session.context.fillStyle = fillStyle;
-    session.context.strokeStyle = strokeStyle;
+    // Default to black fill if no styles specified
+    if (!fillStyle && !strokeStyle)
+    {
+        fillStyle = { color: 0 };
+    }
 
+    // Variables for shape attributes
     let x;
     let y;
     let x1;
@@ -80,40 +124,33 @@ function renderChildren(svg: SVGElement, session: Session, fillStyle: FillStyle,
     let width;
     let height;
 
+    // Handle different SVG element types
     switch (svg.nodeName.toLowerCase())
     {
         case 'path':
             d = svg.getAttribute('d') as string;
-
             graphicsPath = new GraphicsPath(d);
-
             session.context.path(graphicsPath);
-
-            if (fillStyle) session.context.fill();
-            if (strokeStyle) session.context.stroke();
-
+            if (fillStyle) session.context.fill(fillStyle);
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
+
         case 'circle':
-            cx = parseFloatAttribute(svg, 'cx', 0);
-            cy = parseFloatAttribute(svg, 'cy', 0);
-
-            r = parseFloatAttribute(svg, 'r', 0);
-
+            cx = parseSVGFloatAttribute(svg, 'cx', 0);
+            cy = parseSVGFloatAttribute(svg, 'cy', 0);
+            r = parseSVGFloatAttribute(svg, 'r', 0);
             session.context.ellipse(cx, cy, r, r);
-
-            if (fillStyle) session.context.fill();
-            if (strokeStyle) session.context.stroke();
-
+            if (fillStyle) session.context.fill(fillStyle);
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
+
         case 'rect':
-            x = parseFloatAttribute(svg, 'x', 0);
-            y = parseFloatAttribute(svg, 'y', 0);
-
-            width = parseFloatAttribute(svg, 'width', 0);
-            height = parseFloatAttribute(svg, 'height', 0);
-
-            rx = parseFloatAttribute(svg, 'rx', 0);
-            ry = parseFloatAttribute(svg, 'ry', 0);
+            x = parseSVGFloatAttribute(svg, 'x', 0);
+            y = parseSVGFloatAttribute(svg, 'y', 0);
+            width = parseSVGFloatAttribute(svg, 'width', 0);
+            height = parseSVGFloatAttribute(svg, 'height', 0);
+            rx = parseSVGFloatAttribute(svg, 'rx', 0);
+            ry = parseSVGFloatAttribute(svg, 'ry', 0);
 
             if (rx || ry)
             {
@@ -124,161 +161,66 @@ function renderChildren(svg: SVGElement, session: Session, fillStyle: FillStyle,
                 session.context.rect(x, y, width, height);
             }
 
-            if (fillStyle) session.context.fill();
-            if (strokeStyle) session.context.stroke();
-
+            if (fillStyle) session.context.fill(fillStyle);
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
-        case 'ellipse':
-            cx = parseFloatAttribute(svg, 'cx', 0);
-            cy = parseFloatAttribute(svg, 'cy', 0);
 
-            rx = parseFloatAttribute(svg, 'rx', 0);
-            ry = parseFloatAttribute(svg, 'ry', 0);
+        case 'ellipse':
+            cx = parseSVGFloatAttribute(svg, 'cx', 0);
+            cy = parseSVGFloatAttribute(svg, 'cy', 0);
+            rx = parseSVGFloatAttribute(svg, 'rx', 0);
+            ry = parseSVGFloatAttribute(svg, 'ry', 0);
 
             session.context.beginPath();
-            session.context.ellipse(cx, cy, rx, ry); // , 0, Math.PI * 2);
+            session.context.ellipse(cx, cy, rx, ry);
 
-            if (fillStyle) session.context.fill();
-            if (strokeStyle) session.context.stroke();
-
+            if (fillStyle) session.context.fill(fillStyle);
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
-        case 'line':
-            x1 = parseFloatAttribute(svg, 'x1', 0);
-            y1 = parseFloatAttribute(svg, 'y1', 0);
 
-            x2 = parseFloatAttribute(svg, 'x2', 0);
-            y2 = parseFloatAttribute(svg, 'y2', 0);
+        case 'line':
+            x1 = parseSVGFloatAttribute(svg, 'x1', 0);
+            y1 = parseSVGFloatAttribute(svg, 'y1', 0);
+            x2 = parseSVGFloatAttribute(svg, 'x2', 0);
+            y2 = parseSVGFloatAttribute(svg, 'y2', 0);
 
             session.context.beginPath();
             session.context.moveTo(x1, y1);
             session.context.lineTo(x2, y2);
 
-            if (strokeStyle) session.context.stroke();
-
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
 
         case 'polygon':
             pointsString = svg.getAttribute('points') as string;
-
             points = pointsString.match(/\d+/g).map((n) => parseInt(n, 10));
-
             session.context.poly(points, true);
-
-            if (fillStyle) session.context.fill();
-            if (strokeStyle) session.context.stroke();
-
+            if (fillStyle) session.context.fill(fillStyle);
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
+
         case 'polyline':
             pointsString = svg.getAttribute('points') as string;
-
             points = pointsString.match(/\d+/g).map((n) => parseInt(n, 10));
-
             session.context.poly(points, false);
-
-            if (strokeStyle) session.context.stroke();
-
+            if (strokeStyle) session.context.stroke(strokeStyle);
             break;
-        // children will cover these two..
+
+        // Group elements - just process children
         case 'g':
         case 'svg':
             break;
+
         default: {
-            // eslint-disable-next-line no-console
-            console.info(`[SVG parser] <${svg.nodeName}> elements unsupported`);
+            // Log unsupported elements
+            warn(`[SVG parser] <${svg.nodeName}> elements unsupported`);
             break;
         }
     }
 
+    // Recursively process child elements
     for (let i = 0; i < children.length; i++)
     {
         renderChildren(children[i] as SVGElement, session, fillStyle, strokeStyle);
     }
-}
-
-function parseFloatAttribute(svg: SVGElement, id: string, defaultValue: number): number
-{
-    const value = svg.getAttribute(id) as string;
-
-    return value ? Number(value) : defaultValue;
-}
-
-function parseStyle(svg: SVGElement): { strokeStyle: ConvertedStrokeStyle; fillStyle: ConvertedFillStyle }
-{
-    const style = svg.getAttribute('style');
-
-    const strokeStyle: StrokeStyle = {};
-
-    const fillStyle: FillStyle = {};
-
-    let useFill = false;
-    let useStroke = false;
-
-    if (style)
-    {
-        const styleParts = style.split(';');
-
-        for (let i = 0; i < styleParts.length; i++)
-        {
-            const stylePart = styleParts[i];
-
-            const [key, value] = stylePart.split(':');
-
-            switch (key)
-            {
-                case 'stroke':
-                    if (value !== 'none')
-                    {
-                        strokeStyle.color = Color.shared.setValue(value).toNumber();
-                        useStroke = true;
-                    }
-
-                    break;
-                case 'stroke-width':
-                    strokeStyle.width = Number(value);
-                    break;
-                case 'fill':
-                    if (value !== 'none')
-                    {
-                        useFill = true;
-                        fillStyle.color = Color.shared.setValue(value).toNumber();
-                    }
-                    break;
-                case 'fill-opacity':
-                    fillStyle.alpha = Number(value);
-                    break;
-                case 'stroke-opacity':
-                    strokeStyle.alpha = Number(value);
-                    break;
-                case 'opacity':
-                    fillStyle.alpha = Number(value);
-                    strokeStyle.alpha = Number(value);
-                    break;
-            }
-        }
-    }
-    else
-    {
-        const stroke = svg.getAttribute('stroke');
-
-        if (stroke && stroke !== 'none')
-        {
-            useStroke = true;
-            strokeStyle.color = Color.shared.setValue(stroke).toNumber();
-
-            strokeStyle.width = parseFloatAttribute(svg, 'stroke-width', 1);
-        }
-
-        const fill = svg.getAttribute('fill');
-
-        if (fill && fill !== 'none')
-        {
-            useFill = true;
-            fillStyle.color = Color.shared.setValue(fill).toNumber();
-        }
-    }
-
-    return {
-        strokeStyle: useStroke ? (strokeStyle as ConvertedStrokeStyle) : null,
-        fillStyle: useFill ? (fillStyle as ConvertedFillStyle) : null,
-    };
 }

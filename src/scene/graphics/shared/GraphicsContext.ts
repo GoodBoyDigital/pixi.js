@@ -80,6 +80,8 @@ export class GraphicsContext extends EventEmitter<{
         matrix: null,
         /** The fill pattern to use. */
         fill: null,
+        /** The fill units to use. */
+        textureSpace: 'global',
     };
 
     /** The default stroke style to use when none is provided. */
@@ -104,6 +106,8 @@ export class GraphicsContext extends EventEmitter<{
         matrix: null,
         /** The fill pattern to use. */
         fill: null,
+        /** The fill units to use. */
+        textureSpace: 'local',
         /** If the stroke is a pixel line. */
         pixelLine: false,
     };

@@ -6,6 +6,7 @@ import { Texture } from '../../../../rendering/renderers/shared/texture/Texture'
 import { uid } from '../../../../utils/data/uid';
 
 import type { ColorSource } from '../../../../color/Color';
+import type { TextureSpace } from '../FillTypes';
 
 export type GradientType = 'linear' | 'radial';
 
@@ -42,14 +43,23 @@ export class FillGradient implements CanvasGradient
     public gradientStops: Array<{ offset: number, color: string }> = [];
 
     private _styleKey: string | null = null;
+    public textureSpace: TextureSpace = 'local';
 
-    constructor(x0: number, y0: number, x1: number, y1: number)
+    constructor(
+        x0: number = 0,
+        y0: number = 0,
+        x1: number = 1,
+        y1: number = 0,
+        fillUnits: 'global' | 'local' = 'local'
+    )
     {
         this.x0 = x0;
         this.y0 = y0;
 
         this.x1 = x1;
         this.y1 = y1;
+
+        this.textureSpace = fillUnits;
     }
 
     public addColorStop(offset: number, color: ColorSource): this
@@ -110,10 +120,15 @@ export class FillGradient implements CanvasGradient
 
         const angle = Math.atan2(dy, dx);
 
-        m.translate(-x0, -y0);
-        m.scale(1 / defaultSize, 1 / defaultSize);
-        m.rotate(-angle);
-        m.scale(256 / dist, 1);
+        // this matrix is inverted when used in the graphics
+        m.scale(dist / 256, 1);
+        m.rotate(angle);
+        m.translate(x0, y0);
+
+        if (this.textureSpace === 'local')
+        {
+            m.scale(defaultSize, defaultSize);
+        }
 
         this.transform = m;
         this._styleKey = null;

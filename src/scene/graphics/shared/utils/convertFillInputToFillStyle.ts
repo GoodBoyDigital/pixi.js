@@ -1,5 +1,4 @@
 import { Color } from '../../../../color/Color';
-import { Matrix } from '../../../../maths/matrix/Matrix';
 import { Texture } from '../../../../rendering/renderers/shared/texture/Texture';
 import { FillGradient } from '../fill/FillGradient';
 import { FillPattern } from '../fill/FillPattern';
@@ -94,6 +93,7 @@ function handleFillGradient(
     fill.color = 0xffffff;
     fill.texture = value.texture;
     fill.matrix = value.transform;
+    fill.textureSpace = value.textureSpace;
 
     return { ...defaultStyle, ...fill } as ConvertedFillStyle;
 }
@@ -115,32 +115,10 @@ function handleFillObject(value: FillStyle, defaultStyle: ConvertedFillStyle): C
 {
     const style = { ...defaultStyle, ...(value as FillStyle) };
 
-    if (style.texture)
-    {
-        if (style.texture !== Texture.WHITE)
-        {
-            const m = style.matrix?.clone().invert() || new Matrix();
-
-            m.translate(style.texture.frame.x, style.texture.frame.y);
-            m.scale(1 / style.texture.source.width, 1 / style.texture.source.height);
-
-            style.matrix = m;
-        }
-
-        const sourceStyle = style.texture.source.style;
-
-        if (sourceStyle.addressMode === 'clamp-to-edge')
-        {
-            sourceStyle.addressMode = 'repeat';
-            sourceStyle.update();
-        }
-    }
-
     const color = Color.shared.setValue(style.color);
 
     style.alpha *= color.alpha;
     style.color = color.toNumber();
-    style.matrix = style.matrix ? style.matrix.clone() : null; // todo: lets optimise this!
 
     return style as ConvertedFillStyle;
 }

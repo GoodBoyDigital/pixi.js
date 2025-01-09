@@ -114,19 +114,6 @@ describe('Graphics', () =>
 
             graphics.destroy();
         });
-
-        it('should invert matrix when used with texture fill', () =>
-        {
-            const matrix = new Matrix();
-            const texture = Texture.EMPTY;
-
-            matrix.scale(2, 3);
-
-            const style = toFillStyle({ texture, matrix }, GraphicsContext.defaultFillStyle);
-
-            expect(style.matrix.a).toBe(1 / 2);
-            expect(style.matrix.d).toBe(1 / 3);
-        });
     });
 
     describe('tint', () =>

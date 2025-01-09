@@ -1,7 +1,7 @@
 import { Point } from '../../../../maths/point/Point';
 import { uid } from '../../../../utils/data/uid';
 import { warn } from '../../../../utils/logging/warn';
-import { SVGToGraphicsPath } from '../svg/SVGToGraphicsPath';
+import { parseSVGPath } from '../svg/parseSVGPath';
 import { ShapePath } from './ShapePath';
 
 import type { Matrix } from '../../../../maths/matrix/Matrix';
@@ -65,7 +65,7 @@ export class GraphicsPath
     {
         if (typeof instructions === 'string')
         {
-            SVGToGraphicsPath(instructions, this);
+            parseSVGPath(instructions, this);
         }
         else
         {

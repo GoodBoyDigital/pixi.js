@@ -31,12 +31,12 @@ export const scene: TestScene = {
         // texture fill
         const rect1 = new Graphics();
 
-        rect1.rect(50, 0, 50, 50).fill({ texture });
+        rect1.rect(50, 0, 50, 50).fill({ texture, textureSpace: 'global' });
         scene.addChild(rect1);
 
         // gradient fill
         const rect2 = new Graphics();
-        const gradient = new FillGradient(0, 0, 50, 50);
+        const gradient = new FillGradient(0, 0, 50, 50, 'global');
 
         gradient.addColorStop(0, 0xff0000);
         gradient.addColorStop(0.5, 0x00ff00);
@@ -48,22 +48,22 @@ export const scene: TestScene = {
         // texture fill & transform matrix on texture
         const rect3 = new Graphics();
 
-        rect3.rect(0, 50, 50, 50).fill({ texture, matrix: new Matrix().rotate(0.5).scale(0.5, 1) });
+        rect3.rect(0, 50, 50, 50).fill({ texture, textureSpace: 'global', matrix: new Matrix().rotate(0.5).scale(0.5, 1) });
         scene.addChild(rect3);
 
         // line with texture fill
         const line = new Graphics();
 
-        line.lineTo(50, 50).stroke({ width: 5, texture })
+        line.lineTo(50, 50).stroke({ width: 5, texture, textureSpace: 'global' })
             .moveTo(0, 50).lineTo(50, 0)
-            .stroke({ width: 10, texture });
+            .stroke({ width: 10, texture, textureSpace: 'global' });
         scene.addChild(line);
 
         // rect with separate texture fill
         const rect4 = new Graphics();
 
-        rect4.rect(50, 50, 50, 50).fill({ texture: texture2, matrix: new Matrix().scale(0.2, 0.2) })
-            .stroke({ width: 5, texture, color: 0xff0000 });
+        rect4.rect(50, 50, 50, 50).fill({ texture: texture2, textureSpace: 'global', matrix: new Matrix().scale(0.2, 0.2) })
+            .stroke({ width: 5, texture, color: 0xff0000, textureSpace: 'global' });
 
         scene.addChild(rect4);
     },

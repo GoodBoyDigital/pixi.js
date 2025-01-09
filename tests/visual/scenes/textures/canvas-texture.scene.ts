@@ -34,6 +34,6 @@ export const scene: TestScene = {
 
         rect.clear();
         rect.rect(0, 0, 128, 128);
-        rect.fill({ texture });
+        rect.fill({ texture, textureSpace: 'global' });
     },
 };

@@ -20,7 +20,7 @@ export const scene: TestScene = {
         const graphics = new Graphics();
 
         graphics.rect(0, 0, 128, 128);
-        graphics.fill({ texture });
+        graphics.fill({ texture, textureSpace: 'global' });
 
         scene.addChild(graphics);
     },
