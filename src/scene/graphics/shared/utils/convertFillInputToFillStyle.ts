@@ -27,6 +27,11 @@ function isFillGradient(value: unknown): value is FillGradient
     return value instanceof FillGradient;
 }
 
+function isTexture(value: unknown): value is Texture
+{
+    return value instanceof Texture;
+}
+
 /**
  * Handles the case where the value is a ColorLike
  * @param fill
@@ -48,6 +53,21 @@ function handleColorLike(
     fill.color = temp.toNumber();
     fill.alpha = temp.alpha === 1 ? defaultStyle.alpha : temp.alpha;
     fill.texture = Texture.WHITE;
+
+    return { ...defaultStyle, ...fill } as ConvertedFillStyle;
+}
+
+/**
+ * Handles the case where the value is a Texture
+ * @param fill
+ * @param value
+ * @param defaultStyle
+ * @example
+ * graphics.fill(new Texture(0xff0000))
+ */
+function handleTexture(fill: FillStyle, value: Texture, defaultStyle: ConvertedFillStyle): ConvertedFillStyle
+{
+    fill.texture = value;
 
     return { ...defaultStyle, ...fill } as ConvertedFillStyle;
 }
@@ -148,6 +168,10 @@ export function toFillStyle<T extends FillInput>(
     if (isColorLike(value))
     {
         return handleColorLike(fill, value, defaultStyle);
+    }
+    else if (isTexture(value))
+    {
+        return handleTexture(fill, value, defaultStyle);
     }
     else if (isFillPattern(value))
     {

@@ -99,7 +99,7 @@ export interface StrokeStyle extends FillStyle, StrokeAttributes {}
  * ```
  * @memberof scene
  */
-export type FillInput = ColorSource | FillGradient | FillPattern | FillStyle;
+export type FillInput = ColorSource | FillGradient | FillPattern | FillStyle | Texture;
 
 /**
  * These can be directly used as a stroke
