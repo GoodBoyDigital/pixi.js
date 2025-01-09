@@ -371,23 +371,40 @@ export class GraphicsContext extends EventEmitter<{
      */
     public cut(): this
     {
-        for (let i = 0; i < 2; i++)
+        for (let i = 0; i < this.instructions.length; i++)
         {
-            const lastInstruction = this.instructions[this.instructions.length - 1 - i];
+            const instruction = this.instructions[i];
 
             const holePath = this._activePath.clone();
 
-            if (lastInstruction)
+            // make sure the hole is inside the shape
+            const data = instruction.data as FillInstruction['data'];
+            const path = data.path;
+
+            const shapes = path.shapePath.shapePrimitives;
+            const [x, y] = (holePath.shapePath.shapePrimitives[0].shape as any).points;
+
+            let inside = false;
+
+            shapes.forEach((shapePrimitive) =>
             {
-                if (lastInstruction.action === 'stroke' || lastInstruction.action === 'fill')
+                if (shapePrimitive.shape.contains(x, y))
                 {
-                    if (lastInstruction.data.hole)
+                    inside = true;
+                }
+            });
+
+            if (instruction && inside)
+            {
+                if (instruction.action === 'stroke' || instruction.action === 'fill')
+                {
+                    if (instruction.data.hole)
                     {
-                        lastInstruction.data.hole.addPath(holePath);
+                        instruction.data.hole.addPath(holePath);
                     }
                     else
                     {
-                        lastInstruction.data.hole = holePath;
+                        instruction.data.hole = holePath;
                         break;
                     }
                 }
