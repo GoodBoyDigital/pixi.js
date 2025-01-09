@@ -1,6 +1,7 @@
 import { ExtensionType } from '../../../../extensions/Extensions';
 import { VideoSource } from '../../../../rendering/renderers/shared/texture/sources/VideoSource';
 import { detectVideoAlphaMode } from '../../../../utils/browser/detectVideoAlphaMode';
+import { isSafari } from '../../../../utils/browser/isSafari';
 import { getResolutionOfUrl } from '../../../../utils/network/getResolutionOfUrl';
 import { checkDataUrl } from '../../../utils/checkDataUrl';
 import { checkExtension } from '../../../utils/checkExtension';
@@ -11,6 +12,20 @@ import type { Texture } from '../../../../rendering/renderers/shared/texture/Tex
 import type { ResolvedAsset } from '../../../types';
 import type { Loader } from '../../Loader';
 import type { LoaderParser } from '../LoaderParser';
+
+/**
+ * Configuration for the [loadVideo]{@link assets.loadVideo} plugin.
+ * @see assets.loadVideo
+ * @memberof assets
+ */
+export interface LoadVideoConfig
+{
+    /**
+     * The time in milliseconds to wait for the video 'canplay' event before timing out.
+     * @default 30000
+     */
+    loadTimeoutMs?: number
+}
 
 const validVideoExtensions = ['.mp4', '.m4v', '.webm', '.ogg', '.ogv', '.h264', '.avi', '.mov'];
 const validVideoMIMEs = validVideoExtensions.map((ext) => `video/${ext.substring(1)}`);
@@ -37,13 +52,21 @@ export function crossOrigin(element: HTMLImageElement | HTMLVideoElement, url: s
 /**
  * Preload a video element
  * @param element - Video element to preload
+ * @param options - preload options
+ * @param options.timeoutMs - The time in milliseconds to wait preload before throw error
  */
-export function preloadVideo(element: HTMLVideoElement): Promise<void>
+export function preloadVideo(element: HTMLVideoElement, options: { timeoutMs?: number } = {}): Promise<void>
 {
+    const timeoutMs = options.timeoutMs;
+
     return new Promise((resolve, reject) =>
     {
         element.addEventListener('canplaythrough', loaded);
         element.addEventListener('error', error);
+        const timeoutId = timeoutMs !== undefined ? setTimeout(
+            () => error(new ErrorEvent(`preloadVideo exceeded timeout of ${timeoutMs}ms`)),
+            timeoutMs
+        ) : undefined;
 
         element.load();
 
@@ -63,6 +86,7 @@ export function preloadVideo(element: HTMLVideoElement): Promise<void>
         {
             element.removeEventListener('canplaythrough', loaded);
             element.removeEventListener('error', error);
+            if (timeoutId) clearTimeout(timeoutId);
         }
     });
 }
@@ -134,14 +158,15 @@ export const loadVideoTextures = {
         return isValidDataUrl || isValidExtension;
     },
 
-    async load(url: string, asset: ResolvedAsset<VideoSourceOptions>, loader: Loader): Promise<Texture>
+    async load(url: string, asset: ResolvedAsset<VideoSourceOptions & LoadVideoConfig>, loader: Loader): Promise<Texture>
     {
+        const { loadTimeoutMs = 30000, ...rest } = asset.data;
         // --- Merge default and provided options ---
         const options: VideoSourceOptions = {
             ...VideoSource.defaultOptions,
             resolution: asset.data?.resolution || getResolutionOfUrl(url),
             alphaMode: asset.data?.alphaMode || await detectVideoAlphaMode(),
-            ...asset.data,
+            ...rest,
         };
 
         // --- Create and configure HTMLVideoElement ---
@@ -197,29 +222,39 @@ export const loadVideoTextures = {
 
         // this promise will make sure that video is ready to play - as in we have a valid width, height and it can be
         // uploaded to the GPU. Our textures are kind of dumb now, and don't want to handle resizing right now.
-        return new Promise((resolve) =>
+        return new Promise<void>((resolve, reject) =>
         {
-            const onCanPlay = async () =>
+            setTimeout(() => reject(new ErrorEvent(`loadVideo exceeded timeout of ${loadTimeoutMs}ms`)), loadTimeoutMs);
+            if (isSafari()
+                && typeof options.width === 'number'
+                && typeof options.height === 'number'
+                && options.width > 0
+                && options.height > 0)
+            {
+                videoElement.appendChild(sourceElement);
+                resolve();
+            }
+            else
+            {
+                videoElement.addEventListener('canplay', () => resolve());
+                videoElement.appendChild(sourceElement);
+            }
+        })
+            .then(async (): Promise<Texture> =>
             {
                 const base = new VideoSource({ ...options, resource: videoElement });
 
-                videoElement.removeEventListener('canplay', onCanPlay);
-
                 if (asset.data.preload)
                 {
-                    await preloadVideo(videoElement);
+                    await preloadVideo(videoElement, { timeoutMs: options.preloadTimeoutMs });
                 }
 
-                resolve(createTexture(base, loader, url));
-            };
-
-            videoElement.addEventListener('canplay', onCanPlay);
-            videoElement.appendChild(sourceElement);
-        });
+                return createTexture(base, loader, url);
+            });
     },
 
     unload(texture: Texture): void
     {
         texture.destroy(true);
     }
-} satisfies LoaderParser<Texture, VideoSourceOptions>;
+} satisfies LoaderParser<Texture, VideoSourceOptions & LoadVideoConfig, LoadVideoConfig>;

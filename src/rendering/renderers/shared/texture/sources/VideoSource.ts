@@ -274,7 +274,7 @@ export class VideoSource extends TextureSource<VideoResource>
                     this._preloadTimeout = setTimeout(() =>
                     {
                         this._onError(new ErrorEvent(`Preload exceeded timeout of ${options.preloadTimeoutMs}ms`));
-                    }) as unknown as number;
+                    }, options.preloadTimeoutMs) as unknown as number;
                 }
                 source.load();
             }
