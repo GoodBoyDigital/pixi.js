@@ -4,6 +4,7 @@ import { ImageSource } from '../../../../rendering/renderers/shared/texture/sour
 import { getResolutionOfUrl } from '../../../../utils/network/getResolutionOfUrl';
 import { checkDataUrl } from '../../../utils/checkDataUrl';
 import { checkExtension } from '../../../utils/checkExtension';
+import { checkFormat } from '../../../utils/checkFormat';
 import { WorkerManager } from '../../workers/WorkerManager';
 import { LoaderParserPriority } from '../LoaderParser';
 import { createTexture } from './utils/createTexture';
@@ -15,6 +16,7 @@ import type { Loader } from '../../Loader';
 import type { LoaderParser } from '../LoaderParser';
 
 const validImageExtensions = ['.jpeg', '.jpg', '.png', '.webp', '.avif'];
+const validImageFormats = validImageExtensions.map((ext) => ext.slice(1));
 const validImageMIMEs = [
     'image/jpeg',
     'image/png',
@@ -113,9 +115,11 @@ export const loadTextures: LoaderParser<Texture, TextureSourceOptions, LoadTextu
         crossOrigin: 'anonymous',
     },
 
-    test(url: string): boolean
+    test(url: string, asset: ResolvedAsset<TextureSourceOptions>): boolean
     {
-        return checkDataUrl(url, validImageMIMEs) || checkExtension(url, validImageExtensions);
+        return checkDataUrl(url, validImageMIMEs)
+            || checkExtension(url, validImageExtensions)
+            || checkFormat(asset?.format, validImageFormats);
     },
 
     async load(url: string, asset: ResolvedAsset<TextureSourceOptions>, loader: Loader): Promise<Texture>

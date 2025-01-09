@@ -4,6 +4,7 @@ import { detectVideoAlphaMode } from '../../../../utils/browser/detectVideoAlpha
 import { getResolutionOfUrl } from '../../../../utils/network/getResolutionOfUrl';
 import { checkDataUrl } from '../../../utils/checkDataUrl';
 import { checkExtension } from '../../../utils/checkExtension';
+import { checkFormat } from '../../../utils/checkFormat';
 import { createTexture } from './utils/createTexture';
 
 import type { VideoSourceOptions } from '../../../../rendering/renderers/shared/texture/sources/VideoSource';
@@ -13,6 +14,7 @@ import type { Loader } from '../../Loader';
 import type { LoaderParser } from '../LoaderParser';
 
 const validVideoExtensions = ['.mp4', '.m4v', '.webm', '.ogg', '.ogv', '.h264', '.avi', '.mov'];
+const validVideoFormats = validVideoExtensions.map((ext) => ext.slice(1));
 const validVideoMIMEs = validVideoExtensions.map((ext) => `video/${ext.substring(1)}`);
 
 /**
@@ -126,12 +128,13 @@ export const loadVideoTextures = {
         name: 'loadVideo',
     },
 
-    test(url: string): boolean
+    test(url: string, asset: ResolvedAsset<VideoSourceOptions>): boolean
     {
         const isValidDataUrl = checkDataUrl(url, validVideoMIMEs);
         const isValidExtension = checkExtension(url, validVideoExtensions);
+        const isValidFormat = checkFormat(asset?.format, validVideoFormats);
 
-        return isValidDataUrl || isValidExtension;
+        return isValidDataUrl || isValidExtension || isValidFormat;
     },
 
     async load(url: string, asset: ResolvedAsset<VideoSourceOptions>, loader: Loader): Promise<Texture>
