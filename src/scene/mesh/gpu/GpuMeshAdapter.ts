@@ -9,6 +9,7 @@ import { Texture } from '../../../rendering/renderers/shared/texture/Texture';
 import { warn } from '../../../utils/logging/warn';
 
 import type { WebGPURenderer } from '../../../rendering/renderers/gpu/WebGPURenderer';
+import type { Geometry } from '../../../rendering/renderers/shared/geometry/Geometry';
 import type { Mesh } from '../shared/Mesh';
 import type { MeshAdaptor, MeshPipe } from '../shared/MeshPipe';
 
@@ -52,7 +53,7 @@ export class GpuMeshAdapter implements MeshAdaptor
         });
     }
 
-    public execute(meshPipe: MeshPipe, mesh: Mesh)
+    public execute(meshPipe: MeshPipe, mesh: Mesh<Geometry>)
     {
         const renderer = meshPipe.renderer as WebGPURenderer;
 

@@ -6,7 +6,9 @@ import { getAdjustedBlendModeBlend } from '../../../rendering/renderers/shared/s
 import { BigPool } from '../../../utils/pool/PoolGroup';
 import { color32BitToUniform } from '../../graphics/gpu/colorToUniform';
 import { BatchableMesh } from './BatchableMesh';
+import { MeshGeometry } from './MeshGeometry';
 
+import type { Geometry } from '../../../rendering/renderers/shared/geometry/Geometry';
 import type { InstructionSet } from '../../../rendering/renderers/shared/instructions/InstructionSet';
 import type {
     InstructionPipe,
@@ -30,11 +32,11 @@ interface MeshData
 export interface MeshAdaptor
 {
     init(): void;
-    execute(meshPipe: MeshPipe, mesh: Mesh): void;
+    execute(meshPipe: MeshPipe, mesh: Mesh<Geometry>): void;
     destroy(): void;
 }
 
-export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
+export class MeshPipe implements RenderPipe<Mesh<Geometry>>, InstructionPipe<Mesh<Geometry>>
 {
     /** @ignore */
     public static extension = {
@@ -74,7 +76,7 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
         renderer.renderableGC.addManagedHash(this, '_meshDataHash');
     }
 
-    public validateRenderable(mesh: Mesh): boolean
+    public validateRenderable(mesh: Mesh<Geometry>): boolean
     {
         const meshData = this._getMeshData(mesh);
 
@@ -86,11 +88,24 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
 
         if (wasBatched !== isBatched)
         {
+            if (isBatched)
+            {
+                const geometry = mesh._geometry as MeshGeometry;
+
+                meshData.indexSize = geometry.indices.length;
+                meshData.vertexSize = geometry.positions.length;
+            }
+            else
+            {
+                meshData.indexSize = 0;
+                meshData.vertexSize = 0;
+            }
+
             return true;
         }
         else if (isBatched)
         {
-            const geometry = mesh._geometry;
+            const geometry = mesh._geometry as MeshGeometry;
 
             // no need to break the batch if it's the same size
             if (geometry.indices.length !== meshData.indexSize
@@ -102,7 +117,7 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
                 return true;
             }
 
-            const batchableMesh = this._getBatchableMesh(mesh);
+            const batchableMesh = this._getBatchableMesh(mesh as Mesh);
 
             return !batchableMesh._batcher.checkAndUpdateTexture(
                 batchableMesh,
@@ -113,7 +128,7 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
         return false;
     }
 
-    public addRenderable(mesh: Mesh, instructionSet: InstructionSet)
+    public addRenderable(mesh: Mesh<Geometry>, instructionSet: InstructionSet)
     {
         const batcher = this.renderer.renderPipes.batch;
 
@@ -121,10 +136,10 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
 
         if (batched)
         {
-            const gpuBatchableMesh = this._getBatchableMesh(mesh);
+            const gpuBatchableMesh = this._getBatchableMesh(mesh as Mesh);
 
             gpuBatchableMesh.texture = mesh._texture;
-            gpuBatchableMesh.geometry = mesh._geometry;
+            gpuBatchableMesh.geometry = mesh._geometry as MeshGeometry;
 
             batcher.addToBatch(gpuBatchableMesh, instructionSet);
         }
@@ -136,20 +151,20 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
         }
     }
 
-    public updateRenderable(mesh: Mesh)
+    public updateRenderable(mesh: Mesh<Geometry>)
     {
         if (mesh.batched)
         {
             const gpuBatchableMesh = this._gpuBatchableMeshHash[mesh.uid];
 
             gpuBatchableMesh.texture = mesh._texture;
-            gpuBatchableMesh.geometry = mesh._geometry;
+            gpuBatchableMesh.geometry = mesh._geometry as MeshGeometry;
 
             gpuBatchableMesh._batcher.updateElement(gpuBatchableMesh);
         }
     }
 
-    public destroyRenderable(mesh: Mesh)
+    public destroyRenderable(mesh: Mesh<Geometry>)
     {
         this._meshDataHash[mesh.uid] = null;
 
@@ -164,7 +179,7 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
         mesh.off('destroyed', this._destroyRenderableBound);
     }
 
-    public execute(mesh: Mesh)
+    public execute(mesh: Mesh<Geometry>)
     {
         if (!mesh.isRenderable) return;
 
@@ -185,18 +200,24 @@ export class MeshPipe implements RenderPipe<Mesh>, InstructionPipe<Mesh>
         this._adaptor.execute(this, mesh);
     }
 
-    private _getMeshData(mesh: Mesh): MeshData
+    private _getMeshData(mesh: Mesh<Geometry>): MeshData
     {
         return this._meshDataHash[mesh.uid] || this._initMeshData(mesh);
     }
 
-    private _initMeshData(mesh: Mesh): MeshData
+    private _initMeshData(mesh: Mesh<Geometry>): MeshData
     {
-        this._meshDataHash[mesh.uid] = {
+        const meshData = this._meshDataHash[mesh.uid] = {
             batched: mesh.batched,
-            indexSize: mesh._geometry.indices?.length,
-            vertexSize: mesh._geometry.positions?.length,
+            indexSize: 0,
+            vertexSize: 0,
         };
+
+        if (mesh._geometry instanceof MeshGeometry)
+        {
+            meshData.indexSize = mesh._geometry.indices.length;
+            meshData.vertexSize = mesh._geometry.positions.length;
+        }
 
         mesh.on('destroyed', this._destroyRenderableBound);
 
