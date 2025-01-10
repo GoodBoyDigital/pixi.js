@@ -89,7 +89,7 @@ export type TextureSourceLike = TextureSource | TextureResourceOrOptions | strin
  * A texture must have a loaded resource passed to it to work. It does not contain any
  * loading mechanisms.
  *
- * The Assets class can be used to load an texture from a file. This is the recommended
+ * The Assets class can be used to load a texture from a file. This is the recommended
  * way as it will handle the loading and caching for you.
  *
  * ```js
