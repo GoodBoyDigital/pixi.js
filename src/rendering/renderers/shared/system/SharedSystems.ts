@@ -1,3 +1,4 @@
+import { AccessibilitySystem } from '../../../../accessibility/AccessibilitySystem';
 import { CustomRenderPipe } from '../../../../scene/container/CustomRenderPipe';
 import { RenderGroupPipe } from '../../../../scene/container/RenderGroupPipe';
 import { RenderGroupSystem } from '../../../../scene/container/RenderGroupSystem';
@@ -21,6 +22,7 @@ import { ViewSystem } from '../view/ViewSystem';
 import type { ExtractRendererOptions } from './utils/typeUtils';
 
 export const SharedSystems = [
+    AccessibilitySystem,
     BackgroundSystem,
     GlobalUniformSystem,
     HelloSystem,

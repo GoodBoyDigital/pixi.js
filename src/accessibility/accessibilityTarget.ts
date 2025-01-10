@@ -58,13 +58,17 @@ export interface AccessibleOptions
      * depending on this type. Defaults to button.
      * @default 'button'
      */
-    accessibleType: string;
+    accessibleType: keyof HTMLElementTagNameMap;
     /**
      * Specify the pointer-events the accessible div will use
      * Defaults to auto.
      * @default 'auto'
      * @type {accessibility.PointerEvents}
      */
+
+    /** Sets the text content of the shadow div */
+    accessibleText: string | null;
+
     accessiblePointerEvents: PointerEvents;
     /**
      * Setting to false will prevent any children inside this container to
@@ -153,6 +157,13 @@ export const accessibilityTarget: AccessibleTarget = {
      * @default 'button'
      */
     accessibleType: 'button',
+
+    /**
+     * Sets the text content of the shadow div
+     * @member {string}
+     * @memberof scene.Container#
+     */
+    accessibleText: null,
 
     /**
      * Specify the pointer-events the accessible div will use

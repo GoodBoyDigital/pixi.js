@@ -18,6 +18,7 @@ describe('accessibleTarget', () =>
         expect(obj.accessible).toBeBoolean();
         expect(obj.accessible).toBe(false);
         expect(obj.accessibleTitle).toBeNull();
+        expect(obj.accessibleType).toBe('button');
         expect(obj.accessibleHint).toBeNull();
         expect(obj.tabIndex).toEqual(0);
     });
