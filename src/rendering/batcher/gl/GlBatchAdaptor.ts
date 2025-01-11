@@ -22,7 +22,7 @@ export class GlBatchAdaptor implements BatcherAdaptor
         name: 'batch',
     } as const;
 
-    private _didUpload = false;
+    private readonly _didUploadSet: Set<Shader> = new Set();
     private readonly _tempState = State.for2d();
 
     public init(batcherPipe: BatcherPipe): void
@@ -32,15 +32,15 @@ export class GlBatchAdaptor implements BatcherAdaptor
 
     public contextChange(): void
     {
-        this._didUpload = false;
+        this._didUploadSet.clear();
     }
 
     public start(batchPipe: BatcherPipe, geometry: Geometry, shader: Shader): void
     {
         const renderer = batchPipe.renderer as WebGLRenderer;
 
-        // only want to sync the shade ron its first bind!
-        renderer.shader.bind(shader, this._didUpload);
+        // only want to sync the shader on its first bind!
+        renderer.shader.bind(shader, this._didUploadSet.has(shader));
 
         renderer.shader.updateUniformGroup(renderer.globalUniforms.uniformGroup);
 
@@ -51,7 +51,7 @@ export class GlBatchAdaptor implements BatcherAdaptor
     {
         const renderer = batchPipe.renderer as WebGLRenderer;
 
-        this._didUpload = true;
+        this._didUploadSet.add(batch.batcher.shader);
 
         this._tempState.blendMode = batch.blendMode;
 
