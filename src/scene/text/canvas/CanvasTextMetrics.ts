@@ -52,7 +52,7 @@ const contextSettings: ICanvasRenderingContext2DSettings = {
 /**
  * The TextMetrics object represents the measurement of a block of text with a specified style.
  * @example
- * import { TextMetrics, TextStyle } from 'pixi.js';
+ * import { CanvasTextMetrics, TextStyle } from 'pixi.js';
  *
  * const style = new TextStyle({
  *     fontFamily: 'Arial',
@@ -60,7 +60,7 @@ const contextSettings: ICanvasRenderingContext2DSettings = {
  *     fill: 0xff1010,
  *     align: 'center',
  * });
- * const textMetrics = TextMetrics.measureText('Your text', style);
+ * const textMetrics = CanvasTextMetrics.measureText('Your text', style);
  * @memberof text
  */
 export class CanvasTextMetrics
