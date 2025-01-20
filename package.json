@@ -9,6 +9,7 @@
     "type": "git",
     "url": "https://github.com/pixijs/pixijs.git"
   },
+  "type": "module",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
@@ -16,6 +17,12 @@
     "lib",
     "dist"
   ],
+  "jest": {
+    "extensionsToTreatAsEsm": [
+      "js",
+      "ts"
+    ]
+  },
   "scripts": {
     "prepare": "husky install",
     "start": "run-s watch",
@@ -61,10 +68,10 @@
   "dependencies": {
     "@pixi/colord": "^2.9.6",
     "@types/css-font-loading-module": "^0.0.12",
-    "@types/earcut": "^2.1.4",
+    "@types/earcut": "^3.0.0",
     "@webgpu/types": "^0.1.40",
     "@xmldom/xmldom": "^0.8.10",
-    "earcut": "^2.2.4",
+    "earcut": "^3.0.1",
     "eventemitter3": "^5.0.1",
     "ismobilejs": "^1.1.1",
     "parse-svg-path": "^0.1.2"
@@ -81,7 +88,7 @@
     "@types/fs-extra": "^11.0.1",
     "@types/glob": "^8.1.0",
     "@types/inquirer": "^8.0.0",
-    "@types/jest": "^26.0.0",
+    "@types/jest": "^26.0.24",
     "@types/pixelmatch": "^5.2.4",
     "@types/pngjs": "^6.0.2",
     "@types/semver": "^7.5.8",
@@ -101,7 +108,7 @@
     "http-server": "^14.1.1",
     "husky": "^8.0.3",
     "inquirer": "^8.2.6",
-    "jest": "^26.0.0",
+    "jest": "^26.6.3",
     "jest-extended": "^1.2.1",
     "jest-raw-loader": "^1.0.1",
     "knip": "^5.25.2",

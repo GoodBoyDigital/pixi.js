@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     testPathIgnorePatterns: ['/node_modules/', '/dist/', '/lib/'],
     preset: 'ts-jest/presets/js-with-ts',
     runner: '@pixi/jest-electron/runner',
