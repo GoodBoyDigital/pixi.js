@@ -257,4 +257,19 @@ describe('Loader', () =>
         expect(texture.width).toBe(26);
         expect(texture.height).toBe(37);
     });
+
+    it('should error out if loader fails (preferCreateImageBitmap = false)', async () =>
+    {
+        const loader = new Loader();
+
+        loader['_parsers'].push(loadTextures);
+        const config = loadTextures.config;
+        const defValue = config.preferCreateImageBitmap;
+
+        config.preferCreateImageBitmap = false;
+        await loader.load(`${basePath}textures/bunny_no_img.png`).catch(
+            (e) => expect(e).toBeInstanceOf(Error)
+        );
+        config.preferCreateImageBitmap = defValue;
+    });
 });
