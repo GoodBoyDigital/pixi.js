@@ -61,10 +61,10 @@
   "dependencies": {
     "@pixi/colord": "^2.9.6",
     "@types/css-font-loading-module": "^0.0.12",
-    "@types/earcut": "^2.1.4",
+    "@types/earcut": "^3.0.0",
     "@webgpu/types": "^0.1.40",
     "@xmldom/xmldom": "^0.8.10",
-    "earcut": "^2.2.4",
+    "earcut": "^3.0.1",
     "eventemitter3": "^5.0.1",
     "ismobilejs": "^1.1.1",
     "parse-svg-path": "^0.1.2"
